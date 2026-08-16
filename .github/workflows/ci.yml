@@ -73,11 +73,30 @@ jobs:
       # against a regression in the feature the project is built around.
       - run: cargo run -p voxide --features embed -- eval --compare --min-accuracy 0.9
 
-  # TODO(M3): once voxide-audio lands, add an `audio` job here that installs
-  # libasound2-dev on Linux and runs `cargo build --workspace --features mic`
-  # plus `cargo test -p voxide-audio --features mic`. That job is the ONLY
-  # place the microphone backend is ever compiled — development happens in an
-  # environment with no ALSA headers and no audio device.
+  # The microphone backend needs ALSA headers on Linux, which the primary
+  # development environment does not have. This job is the ONLY place
+  # `--features mic` is ever compiled, and it gates the merge accordingly.
+  audio:
+    name: microphone backend / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install ALSA development headers
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev
+      - run: cargo clippy -p voxide-audio --features mic --all-targets -- -D warnings
+      - run: cargo test -p voxide-audio --features mic
+      - run: cargo build -p voxide --features mic
 
   msrv:
     name: minimum supported rust version

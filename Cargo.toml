@@ -1,12 +1,13 @@
 [workspace]
 resolver = "3"
-# Crates are added here as they land, so `cargo test --workspace` is always
-# green on the default branch. Remaining: voxide-audio, voxide-asr,
-# voxide-wake, voxide-pipeline.
 members = [
     "crates/voxide-core",
     "crates/voxide-intent",
     "crates/voxide-actions",
+    "crates/voxide-audio",
+    "crates/voxide-asr",
+    "crates/voxide-wake",
+    "crates/voxide-pipeline",
     "crates/voxide",
 ]
 
@@ -60,6 +61,10 @@ insta = "1.43"
 voxide-core = { path = "crates/voxide-core", version = "0.1.0" }
 voxide-intent = { path = "crates/voxide-intent", version = "0.1.0" }
 voxide-actions = { path = "crates/voxide-actions", version = "0.1.0" }
+voxide-audio = { path = "crates/voxide-audio", version = "0.1.0" }
+voxide-asr = { path = "crates/voxide-asr", version = "0.1.0" }
+voxide-wake = { path = "crates/voxide-wake", version = "0.1.0" }
+voxide-pipeline = { path = "crates/voxide-pipeline", version = "0.1.0" }
 
 [profile.release]
 lto = "thin"

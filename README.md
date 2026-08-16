@@ -69,14 +69,15 @@ Early, and honest about it. What works today:
 | ✅ | Command packs, slot extraction, shell execution |
 | ✅ | Lexical matcher, ranked results, `voxide why` |
 | ✅ | Eval harness with threshold sweep and backend comparison |
-| ✅ | Cross-platform CI, `cargo-deny` license gating |
-| 🚧 | Semantic matcher — implemented, verified in CI (see *Development* below) |
-| 📋 | Audio capture, wake word, speech-to-text, `voxide run` daemon |
-| 📋 | Lua actions, keystroke injection, dictation mode |
+| ✅ | Audio capture, resampling, VAD, pre-roll — all trait-based |
+| ✅ | Wake word detection, pipeline state machine, `voxide run` |
+| ✅ | Cross-platform CI, `cargo-deny` license gating, 145 tests |
+| 🚧 | Semantic matcher and microphone backend — implemented, CI-verified (see *Development*) |
+| 📋 | `voxide models pull`, Lua actions, keystroke injection, dictation mode |
+| 📋 | Acoustic wake word, so the recogniser can idle until spoken to |
 
-Until the audio layer lands, voxide is driven by text. That is not purely
-scaffolding: text mode is how the eval harness runs, how packs get debugged,
-and a usable entry point in its own right.
+Text mode is not scaffolding that goes away: it is how the eval harness runs,
+how packs get debugged, and a usable entry point in its own right.
 
 ---
 
@@ -93,12 +94,17 @@ Omit `--features embed` for a dependency-free build that uses lexical matching.
 ## Usage
 
 ```console
-$ voxide packs list              # what commands exist
-$ voxide say "run the linter"    # match and execute
-$ voxide say --dry-run "..."     # show the command line, run nothing
-$ voxide why "..."               # ranked candidates and why they scored
-$ voxide eval --compare --sweep  # score the matcher against the corpus
+$ voxide packs list                    # what commands exist
+$ voxide say "run the linter"          # match and execute
+$ voxide say --dry-run "..."           # show the command line, run nothing
+$ voxide why "..."                     # ranked candidates and why they scored
+$ voxide eval --compare --sweep        # score the matcher against the corpus
+$ voxide run --wake voxide             # listen on the microphone
+$ voxide run --from recording.wav      # replay a recording through the pipeline
 ```
+
+`voxide run` needs a build with `--features mic,vosk` and a speech model. Without
+them it says so and tells you what to do, rather than failing obscurely.
 
 `voxide why` is the debugging tool. It shows the ranking, which training phrase
 was responsible, and the margin over the runner-up:
@@ -150,8 +156,8 @@ never silently skipped — that failure mode wastes hours.
 ## Architecture
 
 ```
-microphone ──► wake word ──► speech-to-text ──► matcher ──► slots ──► action
-  (cpal)      (rustpotter)      (vosk)        (embedding)          (shell/lua)
+microphone ──► VAD ──► speech-to-text ──► wake word ──► matcher ──► slots ──► action
+  (cpal)      (energy)      (vosk)        (transcript)  (embedding)         (shell)
 ```
 
 Every stage is a trait, and that is load-bearing rather than decorative:
@@ -173,8 +179,12 @@ that are **off by default**, so `cargo test` works anywhere.
 | crate | role |
 | --- | --- |
 | `voxide-core` | Pack format, slots, action specs, template rendering |
+| `voxide-audio` | `AudioSource` trait, WAV and microphone sources, resampling, VAD |
+| `voxide-asr` | `Transcriber` trait, Vosk backend, scriptable mock |
+| `voxide-wake` | `WakeDetector` trait, always-on and transcript spotting |
 | `voxide-intent` | `Matcher` trait, lexical baseline, semantic backend, slot extraction |
 | `voxide-actions` | `Executor` trait, shell backend with real deadlines |
+| `voxide-pipeline` | The listening state machine. Emits events, performs no I/O |
 | `voxide` | CLI |
 
 ## Development
@@ -185,16 +195,17 @@ $ cargo clippy --workspace --all-targets -- -D warnings
 $ cargo run -p voxide -- eval --sweep
 ```
 
-Two backends **cannot be compiled in the primary development environment** and
-are therefore verified only by CI. This is deliberate and the CI jobs gate the
-merge:
+Three backends **cannot be compiled in the primary development environment**
+and are therefore verified only by CI. This is deliberate, and those CI jobs
+gate the merge:
 
 - **`embed`** links ONNX Runtime, whose prebuilt binaries come from a CDN that
   the development sandbox's network policy blocks.
 - **`mic`** needs ALSA headers, which that environment does not provide.
+- **`vosk`** links `libvosk`, a native library installed separately.
 
-If either job goes red, the corresponding feature is broken — do not assume a
-green `test` job covers them.
+If one of those jobs goes red, the corresponding feature is broken — a green
+`test` job does not cover them.
 
 ## Acknowledgements
 

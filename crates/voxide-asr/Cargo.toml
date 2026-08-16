@@ -1,0 +1,25 @@
+[package]
+name = "voxide-asr"
+description = "Speech-to-text backends for voxide."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+# Vosk speech recognition. Off by default: it links libvosk, a native library
+# that must be installed separately and is not available on every platform.
+vosk = ["dep:vosk"]
+
+[dependencies]
+voxide-audio.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+vosk = { version = "0.3", optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true

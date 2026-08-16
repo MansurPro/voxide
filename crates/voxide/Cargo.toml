@@ -19,11 +19,17 @@ path = "src/main.rs"
 default = []
 embed = ["voxide-intent/embed"]
 lua = ["voxide-actions/lua"]
+mic = ["voxide-audio/mic"]
+vosk = ["voxide-asr/vosk"]
 
 [dependencies]
 voxide-core.workspace = true
 voxide-intent.workspace = true
 voxide-actions.workspace = true
+voxide-audio.workspace = true
+voxide-asr.workspace = true
+voxide-wake.workspace = true
+voxide-pipeline.workspace = true
 
 anyhow.workspace = true
 clap.workspace = true

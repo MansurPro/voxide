@@ -1,0 +1,26 @@
+[package]
+name = "voxide-audio"
+description = "Audio capture, resampling, and voice activity detection for voxide."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+# Live microphone capture via cpal. Off by default: it needs ALSA headers on
+# Linux, which not every build environment has. Everything else in this crate
+# works without it, and `WavSource` covers testing.
+mic = ["dep:cpal"]
+
+[dependencies]
+thiserror.workspace = true
+tracing.workspace = true
+hound.workspace = true
+
+cpal = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true

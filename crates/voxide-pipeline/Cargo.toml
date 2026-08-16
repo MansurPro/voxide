@@ -1,0 +1,20 @@
+[package]
+name = "voxide-pipeline"
+description = "The voxide listening loop: audio to matched command."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+voxide-core.workspace = true
+voxide-audio.workspace = true
+voxide-asr.workspace = true
+voxide-wake.workspace = true
+voxide-intent.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

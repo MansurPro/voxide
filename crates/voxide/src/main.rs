@@ -1,6 +1,7 @@
 //! voxide — offline, semantic voice control for your development workflow.
 
 mod eval;
+mod listen;
 mod packs;
 
 use anyhow::{Result, bail};
@@ -67,6 +68,29 @@ enum Cmd {
         action: PacksCmd,
     },
 
+    /// Listen continuously and run commands as they are spoken.
+    Run {
+        /// Read audio from a WAV file instead of a microphone.
+        #[arg(long, value_name = "FILE")]
+        from: Option<PathBuf>,
+
+        /// Input device name substring. Defaults to the system default.
+        #[arg(long, value_name = "NAME")]
+        device: Option<String>,
+
+        /// Require this wake word before acting. Omit for always-on.
+        #[arg(long, value_name = "WORD")]
+        wake: Option<String>,
+
+        /// Speech model directory.
+        #[arg(long, value_name = "DIR")]
+        model: Option<PathBuf>,
+
+        /// Report what would run without running it.
+        #[arg(long)]
+        dry_run: bool,
+    },
+
     /// Score the matcher against a golden phrase corpus.
     Eval {
         /// Directory of corpus `*.toml` files.
@@ -114,6 +138,20 @@ fn main() -> std::process::ExitCode {
         Cmd::Say { words, dry_run } => cmd_say(&cli, &words.join(" "), *dry_run),
         Cmd::Why { words, top } => cmd_why(&cli, &words.join(" "), *top),
         Cmd::Packs { action } => cmd_packs(&cli, action),
+        Cmd::Run {
+            from,
+            device,
+            wake,
+            model,
+            dry_run,
+        } => cmd_run(
+            &cli,
+            from.as_deref(),
+            device.as_deref(),
+            wake.as_deref(),
+            model.as_deref(),
+            *dry_run,
+        ),
         Cmd::Eval {
             corpus,
             compare,
@@ -288,6 +326,37 @@ fn cmd_why(cli: &Cli, phrase: &str, top: usize) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn cmd_run(
+    cli: &Cli,
+    from: Option<&std::path::Path>,
+    device: Option<&str>,
+    wake: Option<&str>,
+    model: Option<&std::path::Path>,
+    dry_run: bool,
+) -> Result<()> {
+    let (set, matcher) = load(cli)?;
+
+    let input = match from {
+        Some(path) => listen::Input::Wav(path),
+        None => listen::Input::Mic(device),
+    };
+
+    listen::run(
+        &set,
+        matcher.as_ref(),
+        listen::Options {
+            input,
+            wake_word: wake,
+            model,
+            dry_run,
+            config: voxide_pipeline::Config {
+                threshold: cli.threshold,
+                ..Default::default()
+            },
+        },
+    )
 }
 
 fn cmd_eval(
