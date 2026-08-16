@@ -25,8 +25,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Every target here is built on a runner of its own architecture, so
+          # the artifact that ships is the artifact that was executed. Checking
+          # that a cross-compiled file exists is not the same as knowing it runs.
+          #
+          # Intel macOS is deliberately absent: ort has no prebuilt ONNX Runtime
+          # for x86_64-apple-darwin ("no prebuilt binaries available for target
+          # x86_64-apple-darwin"), so the semantic backend cannot be built for
+          # it at all. GitHub has also retired the macos-13 runners that would
+          # have hosted it. Intel Macs are covered by the from-source install in
+          # the README, which works without `--features embed`.
           - { os: macos-latest, target: aarch64-apple-darwin }
-          - { os: macos-13, target: x86_64-apple-darwin }
           - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
     steps:
@@ -49,12 +58,9 @@ jobs:
           sudo apt-get install -y libasound2-dev
 
       - name: Build
-        run: cargo build --release --locked -p voxide --features "$FEATURES" --target ${{ matrix.target }}
         shell: bash
+        run: cargo build --release --locked -p voxide --features "$FEATURES" --target ${{ matrix.target }}
 
-      # Every runner is deliberately native, so the artifact that ships is the
-      # artifact that just got exercised. A cross-compiled binary could only be
-      # checked for existence, which is not the same as knowing it works.
       - name: Verify the built binary
         shell: bash
         run: |

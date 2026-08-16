@@ -102,9 +102,13 @@ how packs get debugged, and a usable entry point in its own right.
 ### Prebuilt binary
 
 Grab an archive for your platform from
-[Releases](https://github.com/MansurPro/voxide/releases). Each one is a single
-self-contained binary — ONNX Runtime is statically linked, so there is nothing
-to install alongside it.
+[Releases](https://github.com/MansurPro/voxide/releases) — Apple Silicon macOS,
+x86_64 Linux, or x86_64 Windows. Each is a single self-contained binary: ONNX
+Runtime is statically linked, so there is nothing to install alongside it.
+
+Intel Macs have no prebuilt archive, because ONNX Runtime ships no
+`x86_64-apple-darwin` binaries for the version voxide links. Build from source
+below, omitting `--features embed`, for the lexical backend.
 
 ```console
 $ tar xzf voxide-*.tar.gz && cd voxide-*
