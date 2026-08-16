@@ -5,7 +5,9 @@
 /models/
 *.onnx
 
-# fastembed drops its ONNX download here on the first `--features embed` run.
+# fastembed's default cache location, relative to the working directory. Nothing
+# should write here any more -- SemanticMatcher pins the cache to
+# ~/.cache/voxide/models -- but a build from before that fix still would.
 /.fastembed_cache/
 
 # Local per-user state written by the CLI during development.

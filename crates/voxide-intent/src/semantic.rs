@@ -73,8 +73,16 @@ impl SemanticMatcher {
         let fingerprint = commands.fingerprint(lang);
         let cache_path = cache_path();
 
+        // fastembed defaults its model cache to `./.fastembed_cache`, relative
+        // to the *current directory*. For an installed binary that means
+        // re-downloading ~90 MB into every project a user speaks a command in,
+        // and silently degrading to lexical matching wherever the cwd is not
+        // writable. Pin it next to the phrase vectors instead, so one download
+        // serves the whole machine.
         let mut model = fastembed::TextEmbedding::try_new(
-            fastembed::TextInitOptions::new(MODEL).with_show_download_progress(true),
+            fastembed::TextInitOptions::new(MODEL)
+                .with_cache_dir(model_cache_dir())
+                .with_show_download_progress(true),
         )
         .map_err(|e| SemanticError::Model(e.to_string()))?;
 
@@ -238,7 +246,8 @@ fn cosine(a: &[f32], b: &[f32]) -> f32 {
     a.iter().zip(b).map(|(x, y)| x * y).sum()
 }
 
-fn cache_path() -> PathBuf {
+/// Per-user cache root: `~/.cache/voxide`, or the platform equivalent.
+fn cache_root() -> PathBuf {
     #[cfg(windows)]
     let base = std::env::var_os("LOCALAPPDATA").map(PathBuf::from);
 
@@ -247,9 +256,16 @@ fn cache_path() -> PathBuf {
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")));
 
-    base.unwrap_or_else(std::env::temp_dir)
-        .join("voxide")
-        .join("phrase-vectors.json")
+    base.unwrap_or_else(std::env::temp_dir).join("voxide")
+}
+
+/// Where the ONNX weights and tokenizer are kept.
+fn model_cache_dir() -> PathBuf {
+    cache_root().join("models")
+}
+
+fn cache_path() -> PathBuf {
+    cache_root().join("phrase-vectors.json")
 }
 
 fn read_cache(path: &Path, fingerprint: &str) -> Option<Vec<Entry>> {

@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  # So the whole pipeline can be exercised without burning a version number.
+  # Dispatch runs build and verify, then stop short of publishing.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  # The shipped binary is the full one: semantic matching is the point of the
+  # project, and a microphone is how it is meant to be driven. `vosk` is left
+  # out because it needs a system libvosk that we cannot bundle.
+  FEATURES: embed,mic
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: macos-13, target: x86_64-apple-darwin }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      # cpal links ALSA on Linux. Every runner here is native, so this is a
+      # build-time header dependency only -- but it becomes a *runtime*
+      # dependency for whoever installs the Linux archive. Noted in the release
+      # body rather than hidden.
+      - name: Install ALSA development headers
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev
+
+      - name: Build
+        run: cargo build --release --locked -p voxide --features "$FEATURES" --target ${{ matrix.target }}
+        shell: bash
+
+      # Every runner is deliberately native, so the artifact that ships is the
+      # artifact that just got exercised. A cross-compiled binary could only be
+      # checked for existence, which is not the same as knowing it works.
+      - name: Verify the built binary
+        shell: bash
+        run: |
+          BIN=target/${{ matrix.target }}/release/voxide
+          if [ "${{ runner.os }}" = "Windows" ]; then BIN="$BIN.exe"; fi
+
+          "$BIN" --version
+
+          # Proves the statically linked ONNX Runtime actually initialises, the
+          # model lands in the per-user cache, and the hybrid matcher clears the
+          # same floor CI holds the source to.
+          "$BIN" --packs ./packs eval --corpus tests/corpus --compare --min-accuracy 0.975
+
+          # A release binary must not scribble in whatever directory it is run
+          # from; the model belongs in the per-user cache.
+          if [ -e .fastembed_cache ]; then
+            echo "::error::binary wrote a model cache into the working directory"
+            exit 1
+          fi
+
+      - name: Package
+        id: package
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then VERSION="dev"; fi
+          STAGE="voxide-${VERSION}-${{ matrix.target }}"
+          mkdir -p "$STAGE"
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp target/${{ matrix.target }}/release/voxide.exe "$STAGE/"
+          else
+            cp target/${{ matrix.target }}/release/voxide "$STAGE/"
+          fi
+
+          # The binary alone is inert: with no `packs/` in the working directory
+          # and nothing in the per-user config dir, it has no commands to match.
+          cp -r packs "$STAGE/"
+          cp README.md LICENSE-MIT LICENSE-APACHE "$STAGE/"
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "${STAGE}.zip" "$STAGE" >/dev/null
+            echo "asset=${STAGE}.zip" >> "$GITHUB_OUTPUT"
+          else
+            tar czf "${STAGE}.tar.gz" "$STAGE"
+            echo "asset=${STAGE}.tar.gz" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ steps.package.outputs.asset }}
+          if-no-files-found: error
+
+  publish:
+    name: publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # This project pins and verifies the SHA-256 of every model it downloads;
+      # its own binaries get the same treatment.
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --notes "
+          Each archive contains the \`voxide\` binary, the bundled \`packs/\`, and both licences.
+          Built with \`--features embed,mic\`: semantic matching and microphone input included.
+
+          **Install**
+
+          \`\`\`console
+          tar xzf voxide-*.tar.gz && cd voxide-*
+          install -m755 voxide /usr/local/bin/
+          mkdir -p ~/.config/voxide && cp -r packs ~/.config/voxide/
+          \`\`\`
+
+          On first run voxide downloads the ~90 MB embedding model once into
+          \`~/.cache/voxide/models\`. Nothing else leaves your machine.
+
+          **Linux** archives need ALSA at runtime: \`sudo apt-get install libasound2\`.
+
+          Verify a download against \`SHA256SUMS\`." \
+            dist/*

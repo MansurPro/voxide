@@ -99,6 +99,28 @@ how packs get debugged, and a usable entry point in its own right.
 
 ## Install
 
+### Prebuilt binary
+
+Grab an archive for your platform from
+[Releases](https://github.com/MansurPro/voxide/releases). Each one is a single
+self-contained binary — ONNX Runtime is statically linked, so there is nothing
+to install alongside it.
+
+```console
+$ tar xzf voxide-*.tar.gz && cd voxide-*
+$ install -m755 voxide /usr/local/bin/
+$ mkdir -p ~/.config/voxide && cp -r packs ~/.config/voxide/
+```
+
+The second line matters: the binary has no commands of its own. It looks for
+`./packs` in the current directory first, then `~/.config/voxide/packs`, so
+copying the bundled packs there is what makes it work from anywhere.
+
+Verify a download against the `SHA256SUMS` published with the release. On Linux,
+microphone support needs ALSA at runtime (`sudo apt-get install libasound2`).
+
+### From source
+
 ```console
 $ git clone https://github.com/MansurPro/voxide
 $ cd voxide
@@ -106,6 +128,11 @@ $ cargo install --path crates/voxide --features embed
 ```
 
 Omit `--features embed` for a dependency-free build that uses lexical matching.
+
+### First run
+
+The embedding model (~90 MB) is downloaded once, into `~/.cache/voxide/models`,
+and shared by every project on the machine. Nothing else leaves your computer.
 
 ## Usage
 
