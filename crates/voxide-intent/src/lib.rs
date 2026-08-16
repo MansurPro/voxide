@@ -18,11 +18,17 @@ pub mod matcher;
 pub mod slots;
 
 #[cfg(feature = "embed")]
+pub mod hybrid;
+
+#[cfg(feature = "embed")]
 pub mod semantic;
 
 pub use lexical::LexicalMatcher;
 pub use matcher::{Match, Matcher};
 pub use slots::extract as extract_slots;
+
+#[cfg(feature = "embed")]
+pub use hybrid::HybridMatcher;
 
 #[cfg(feature = "embed")]
 pub use semantic::SemanticMatcher;

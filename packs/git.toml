@@ -10,6 +10,9 @@ phrases = [
     "show me the status",
     "git status",
     "what's modified",
+    # `--short` prints a list of files, and nothing above says so. Without this
+    # the command is unreachable by the most natural way to ask for it.
+    "which files are modified",
 ]
 action = { type = "shell", run = "git status --short --branch" }
 

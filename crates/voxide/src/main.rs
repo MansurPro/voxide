@@ -260,7 +260,12 @@ fn build_matcher(set: &CommandSet, lang: &str) -> Box<dyn Matcher> {
     #[cfg(feature = "embed")]
     {
         match voxide_intent::SemanticMatcher::load(set, lang) {
-            Ok(m) => return Box::new(m),
+            Ok(m) => {
+                return Box::new(voxide_intent::HybridMatcher::new(
+                    LexicalMatcher::new(set, lang),
+                    m,
+                ));
+            }
             Err(e) => tracing::warn!(
                 error = %e,
                 "semantic matcher unavailable, falling back to lexical matching; \
@@ -442,7 +447,10 @@ fn cmd_eval(
         eval::print_report(&baseline_report, false);
         eval::print_report(&report, !quiet);
         let delta = (report.top1_accuracy() - baseline_report.top1_accuracy()) * 100.0;
-        println!("\nsemantic matching is {delta:+.1} points over the lexical baseline");
+        println!(
+            "\n{} matching is {delta:+.1} points over the lexical baseline",
+            report.backend
+        );
     } else {
         if compare {
             println!(

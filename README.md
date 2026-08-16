@@ -38,13 +38,23 @@ actually talk:
 | backend | overall top-1 | on the 5 paraphrase cases |
 | --- | --- | --- |
 | `lexical` (token + trigram overlap — the conventional approach) | 87.5% | **0 / 5** |
-| `semantic` (MiniLM embeddings) | see `voxide eval --compare` | — |
+| `semantic` (MiniLM embeddings) | 92.5% | 5 / 5 |
+| `hybrid` (both, blended — the default with `--features embed`) | **100%** | **5 / 5** |
+
+Each backend is scored at its own threshold, because the scales are not
+comparable: lexical overlap is near-binary, cosine similarity is continuous.
+
+The blend wins because the two backends fail in almost disjoint ways. Semantic
+matching reads a `{slot}` marker as a literal word, so "switch to develop" is
+scored on the branch name and drifts toward `cargo.build`; lexical matching
+drops the marker and gets it right. Lexical cannot recognise a rewording it was
+never shown; semantic can. Neither is a subset of the other.
 
 The lexical baseline is not a strawman: it gets 35/35 on utterances close to a
-training phrase. It scores **zero** the moment wording drifts — "make sure
-everything still passes", "which files have I touched", "clean up the
-indentation". That cliff is the entire problem, and it is what voxide is built
-to remove.
+training phrase. It fails **every one** of the five that drift — "make sure
+everything still passes" reaches 0.054 against `cargo.test`, "clean up the
+indentation" loses outright to `cargo.test.filter`. That cliff is the entire
+problem, and it is what voxide is built to remove.
 
 Run it yourself:
 
@@ -190,7 +200,7 @@ that are **off by default**, so `cargo test` works anywhere.
 | `voxide-audio` | `AudioSource` trait, WAV and microphone sources, resampling, VAD |
 | `voxide-asr` | `Transcriber` trait, Vosk backend, scriptable mock |
 | `voxide-wake` | `WakeDetector` trait, always-on and transcript spotting |
-| `voxide-intent` | `Matcher` trait, lexical baseline, semantic backend, slot extraction |
+| `voxide-intent` | `Matcher` trait, lexical baseline, semantic and hybrid backends, slot extraction |
 | `voxide-models` | Pinned, checksum-verified model downloads and zip extraction |
 | `voxide-actions` | `Executor` trait, shell backend with real deadlines |
 | `voxide-pipeline` | The listening state machine. Emits events, performs no I/O |

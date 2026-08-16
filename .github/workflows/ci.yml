@@ -67,11 +67,15 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy -p voxide-intent --features embed --all-targets -- -D warnings
       - run: cargo test -p voxide-intent --features embed
-      # Proves the CLI actually selects the semantic matcher and clears the
-      # accuracy floor on the golden corpus. The lexical baseline scores ~87%
-      # overall but 0/5 on the paraphrase cases, so this gate is the guard
+      # Proves the CLI actually selects the embedding-backed matcher and clears
+      # the accuracy floor on the golden corpus. The lexical baseline scores
+      # ~87% overall but 0/5 on the paraphrase cases, so this gate is the guard
       # against a regression in the feature the project is built around.
-      - run: cargo run -p voxide --features embed -- eval --compare --min-accuracy 0.9
+      #
+      # The blend currently scores 40/40, so the floor is set one case below
+      # perfect: tight enough that a real regression fails the build, loose
+      # enough that adding a hard corpus case is not an automatic red.
+      - run: cargo run -p voxide --features embed -- eval --compare --min-accuracy 0.975
 
   # The microphone backend needs ALSA headers on Linux, which the primary
   # development environment does not have. This job is the ONLY place
