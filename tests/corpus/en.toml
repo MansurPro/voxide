@@ -1,0 +1,187 @@
+# Golden phrase corpus for the bundled `cargo` and `git` packs.
+#
+# Cases are written the way somebody would actually speak, NOT by copying the
+# training phrases out of the packs. Roughly a third are deliberate paraphrases
+# that share little or no vocabulary with any training phrase -- those are the
+# cases that separate semantic matching from the lexical baseline, and they are
+# the reason this file exists.
+#
+# `voxide eval --compare` scores both backends against this corpus.
+
+# --- cargo.test ------------------------------------------------------------
+[[case]]
+say = "run the tests"
+expect = "cargo.test"
+
+[[case]]
+say = "run the test suite"
+expect = "cargo.test"
+
+[[case]]
+say = "let's test this"
+expect = "cargo.test"
+
+[[case]]
+say = "make sure everything still passes"
+expect = "cargo.test"
+note = "paraphrase: no shared vocabulary with any training phrase"
+
+[[case]]
+say = "are the tests green"
+expect = "cargo.test"
+note = "paraphrase"
+
+# --- cargo.test.filter -----------------------------------------------------
+[[case]]
+say = "run the parser tests"
+expect = "cargo.test.filter"
+
+[[case]]
+say = "test just the matcher"
+expect = "cargo.test.filter"
+
+[[case]]
+say = "only run tests for the executor"
+expect = "cargo.test.filter"
+
+# --- cargo.build -----------------------------------------------------------
+[[case]]
+say = "build the project"
+expect = "cargo.build"
+
+[[case]]
+say = "compile everything"
+expect = "cargo.build"
+
+[[case]]
+say = "make a debug build"
+expect = "cargo.build"
+
+# --- cargo.check -----------------------------------------------------------
+[[case]]
+say = "check the code"
+expect = "cargo.check"
+
+[[case]]
+say = "does this compile"
+expect = "cargo.check"
+
+[[case]]
+say = "type check the project"
+expect = "cargo.check"
+
+# --- cargo.clippy ----------------------------------------------------------
+[[case]]
+say = "run the linter"
+expect = "cargo.clippy"
+
+[[case]]
+say = "run clippy"
+expect = "cargo.clippy"
+
+[[case]]
+say = "any lint warnings"
+expect = "cargo.clippy"
+note = "paraphrase"
+
+# --- cargo.fmt -------------------------------------------------------------
+[[case]]
+say = "format the code"
+expect = "cargo.fmt"
+
+[[case]]
+say = "run rustfmt"
+expect = "cargo.fmt"
+
+[[case]]
+say = "clean up the indentation"
+expect = "cargo.fmt"
+note = "paraphrase"
+
+# --- git.status ------------------------------------------------------------
+[[case]]
+say = "what changed"
+expect = "git.status"
+
+[[case]]
+say = "show me the status"
+expect = "git.status"
+
+[[case]]
+say = "what's modified"
+expect = "git.status"
+
+[[case]]
+say = "which files have I touched"
+expect = "git.status"
+note = "paraphrase"
+
+# --- git.diff --------------------------------------------------------------
+[[case]]
+say = "show me the diff"
+expect = "git.diff"
+
+[[case]]
+say = "what did I change"
+expect = "git.diff"
+
+[[case]]
+say = "show unstaged changes"
+expect = "git.diff"
+
+# --- git.log ---------------------------------------------------------------
+[[case]]
+say = "show recent commits"
+expect = "git.log"
+
+[[case]]
+say = "what's the history"
+expect = "git.log"
+
+[[case]]
+say = "show the last few commits"
+expect = "git.log"
+
+# --- git.checkout ----------------------------------------------------------
+[[case]]
+say = "checkout main"
+expect = "git.checkout"
+
+[[case]]
+say = "switch to develop"
+expect = "git.checkout"
+
+[[case]]
+say = "go to the release branch"
+expect = "git.checkout"
+
+# --- git.branch.create -----------------------------------------------------
+[[case]]
+say = "create a branch called hotfix"
+expect = "git.branch.create"
+
+[[case]]
+say = "make a new branch named experiment"
+expect = "git.branch.create"
+
+# --- git.commit ------------------------------------------------------------
+[[case]]
+say = "commit with message initial import"
+expect = "git.commit"
+
+[[case]]
+say = "commit this as fix the cache hash"
+expect = "git.commit"
+
+# --- git.pull --------------------------------------------------------------
+[[case]]
+say = "pull the latest"
+expect = "git.pull"
+
+[[case]]
+say = "get the latest changes"
+expect = "git.pull"
+
+[[case]]
+say = "sync with the remote"
+expect = "git.pull"

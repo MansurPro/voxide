@@ -1,0 +1,70 @@
+[pack]
+name = "cargo"
+description = "Rust build, test, and lint commands"
+
+# Phrases are training examples, not a grammar. With the semantic backend you
+# do not need to say one of these verbatim -- anything close in meaning wins.
+# Three or four naturally different wordings per command is usually plenty;
+# padding the list with near-duplicates does not help.
+
+[[command]]
+id = "cargo.test"
+description = "Run the test suite"
+phrases = [
+    "run the tests",
+    "run the test suite",
+    "check if the tests pass",
+    "let's test this",
+]
+action = { type = "shell", run = "cargo test" }
+
+[[command]]
+id = "cargo.test.filter"
+description = "Run tests matching a filter"
+phrases = [
+    "run the {filter} tests",
+    "test just {filter}",
+    "only run tests for {filter}",
+]
+slots = [{ name = "filter", entity = "test name or module" }]
+action = { type = "shell", run = "cargo test {{filter}}" }
+
+[[command]]
+id = "cargo.build"
+description = "Build the project"
+phrases = [
+    "build the project",
+    "compile everything",
+    "make a debug build",
+]
+action = { type = "shell", run = "cargo build" }
+
+[[command]]
+id = "cargo.check"
+description = "Type-check without building"
+phrases = [
+    "check the code",
+    "does this compile",
+    "type check the project",
+]
+action = { type = "shell", run = "cargo check" }
+
+[[command]]
+id = "cargo.clippy"
+description = "Run the linter"
+phrases = [
+    "run the linter",
+    "run clippy",
+    "check for lint warnings",
+]
+action = { type = "shell", run = "cargo clippy --all-targets" }
+
+[[command]]
+id = "cargo.fmt"
+description = "Format the source tree"
+phrases = [
+    "format the code",
+    "tidy up the formatting",
+    "run rustfmt",
+]
+action = { type = "shell", run = "cargo fmt --all" }

@@ -1,0 +1,31 @@
+[package]
+name = "voxide-actions"
+description = "Action execution for voxide: shell, Lua, text, and key backends."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+# Lua scripting for user-authored commands. Off by default: it vendors and
+# compiles a Lua interpreter, which most users of the shell backend never need.
+lua = ["dep:mlua"]
+
+[dependencies]
+voxide-core.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+mlua = { workspace = true, optional = true }
+
+# Needed to signal an entire process group. `sh -c "..."` may fork rather than
+# exec, so killing only the shell can leave a grandchild running and holding
+# the output pipe open.
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

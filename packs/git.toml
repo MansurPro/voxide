@@ -1,0 +1,75 @@
+[pack]
+name = "git"
+description = "Everyday git operations"
+
+[[command]]
+id = "git.status"
+description = "Show the working tree status"
+phrases = [
+    "what changed",
+    "show me the status",
+    "git status",
+    "what's modified",
+]
+action = { type = "shell", run = "git status --short --branch" }
+
+[[command]]
+id = "git.diff"
+description = "Show unstaged changes"
+phrases = [
+    "show me the diff",
+    "what did I change",
+    "show unstaged changes",
+]
+action = { type = "shell", run = "git diff" }
+
+[[command]]
+id = "git.log"
+description = "Show recent commits"
+phrases = [
+    "show recent commits",
+    "what's the history",
+    "show the last few commits",
+]
+action = { type = "shell", run = "git log --oneline -15" }
+
+[[command]]
+id = "git.checkout"
+description = "Switch to a branch"
+phrases = [
+    "checkout {branch}",
+    "switch to {branch}",
+    "go to the {branch} branch",
+]
+slots = [{ name = "branch", entity = "git branch name" }]
+action = { type = "shell", run = "git checkout {{branch}}" }
+
+[[command]]
+id = "git.branch.create"
+description = "Create and switch to a new branch"
+phrases = [
+    "create a branch called {branch}",
+    "make a new branch named {branch}",
+]
+slots = [{ name = "branch", entity = "git branch name" }]
+action = { type = "shell", run = "git checkout -b {{branch}}" }
+
+[[command]]
+id = "git.commit"
+description = "Commit staged changes with a message"
+phrases = [
+    "commit with message {message}",
+    "commit this as {message}",
+]
+slots = [{ name = "message", entity = "commit message" }]
+action = { type = "shell", run = "git commit -m \"{{message}}\"" }
+
+[[command]]
+id = "git.pull"
+description = "Pull from the remote"
+phrases = [
+    "pull the latest",
+    "get the latest changes",
+    "sync with the remote",
+]
+action = { type = "shell", run = "git pull --ff-only" }

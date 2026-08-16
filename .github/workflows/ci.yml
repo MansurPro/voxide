@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  test:
+    name: test / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # Default features are audio-free on purpose, so this job needs no
+      # system libraries and proves the core builds anywhere.
+      - run: cargo test --workspace --all-targets
+
+  # The semantic backend links ONNX Runtime, whose prebuilt binaries are
+  # fetched from a CDN at build time. That download is blocked in the
+  # development sandbox, so this job is the ONLY place `--features embed` is
+  # ever compiled. It gates the merge like every other job — if it goes red,
+  # the differentiating feature of this project is broken.
+  embed:
+    name: semantic backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy -p voxide-intent --features embed --all-targets -- -D warnings
+      - run: cargo test -p voxide-intent --features embed
+      # Proves the CLI actually selects the semantic matcher and clears the
+      # accuracy floor on the golden corpus. The lexical baseline scores ~87%
+      # overall but 0/5 on the paraphrase cases, so this gate is the guard
+      # against a regression in the feature the project is built around.
+      - run: cargo run -p voxide --features embed -- eval --compare --min-accuracy 0.9
+
+  # TODO(M3): once voxide-audio lands, add an `audio` job here that installs
+  # libasound2-dev on Linux and runs `cargo build --workspace --features mic`
+  # plus `cargo test -p voxide-audio --features mic`. That job is the ONLY
+  # place the microphone backend is ever compiled — development happens in an
+  # environment with no ALSA headers and no audio device.
+
+  msrv:
+    name: minimum supported rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace
+
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check bans licenses sources

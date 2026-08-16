@@ -1,0 +1,36 @@
+[package]
+name = "voxide"
+description = "Offline, semantic voice control for your development workflow."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+default-run = "voxide"
+
+[[bin]]
+name = "voxide"
+path = "src/main.rs"
+
+[features]
+default = []
+embed = ["voxide-intent/embed"]
+lua = ["voxide-actions/lua"]
+
+[dependencies]
+voxide-core.workspace = true
+voxide-intent.workspace = true
+voxide-actions.workspace = true
+
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

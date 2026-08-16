@@ -1,0 +1,9 @@
+/target
+**/*.rs.bk
+
+# Model weights are downloaded by `voxide models pull`, never committed.
+/models/
+*.onnx
+
+# Local per-user state written by the CLI during development.
+/.voxide/

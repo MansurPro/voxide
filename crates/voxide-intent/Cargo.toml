@@ -1,0 +1,27 @@
+[package]
+name = "voxide-intent"
+description = "Intent matching for voxide: lexical baseline and semantic embedding matcher."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+# Pulls in ONNX Runtime and a sentence-embedding model. Off by default so the
+# crate builds and tests with no native dependencies and no model download.
+embed = ["dep:fastembed", "dep:serde_json"]
+
+[dependencies]
+voxide-core.workspace = true
+serde.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+
+fastembed = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true

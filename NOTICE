@@ -1,0 +1,35 @@
+voxide
+Copyright 2026 MansurPro
+
+This product includes software developed by MansurPro.
+
+--------------------------------------------------------------------------
+Acknowledgements
+--------------------------------------------------------------------------
+
+voxide is an independent work. Its design was informed by the author's prior
+work on a fork of the JARVIS voice assistant by Abraham Tugalov
+(https://github.com/Priler/jarvis), in particular the general approach of
+matching spoken commands to intents using sentence-embedding cosine
+similarity with an on-disk vector cache, and the shape of a capability-gated
+Lua scripting sandbox for user-authored commands.
+
+No source code from that project is reproduced here. voxide is licensed
+independently under MIT OR Apache-2.0; the JARVIS project carries different
+licensing terms and no part of it is redistributed with voxide.
+
+--------------------------------------------------------------------------
+Third-party model weights
+--------------------------------------------------------------------------
+
+voxide does not bundle model weights. `voxide models pull` downloads them at
+runtime from their upstream sources, each pinned to an exact revision and
+verified by SHA-256. Those models carry their own licenses:
+
+  - Sentence-embedding ONNX models: see the Qdrant FastEmbed model cards on
+    the Hugging Face Hub for per-model licensing.
+  - Vosk speech recognition models: see https://alphacephei.com/vosk/models
+    for per-model licensing (most are Apache-2.0).
+
+Review the license of any model you download before redistributing it or
+using it commercially.
