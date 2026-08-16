@@ -10,7 +10,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use voxide_actions::{DefaultExecutor, ExecError, Executor};
 use voxide_core::CommandSet;
-use voxide_intent::{DEFAULT_THRESHOLD, LexicalMatcher, Matcher};
+use voxide_intent::{LexicalMatcher, Matcher};
 
 #[derive(Parser)]
 #[command(
@@ -28,9 +28,11 @@ struct Cli {
     #[arg(long, global = true, default_value = voxide_core::DEFAULT_LANG)]
     lang: String,
 
-    /// Minimum score for a match to be acted on.
-    #[arg(long, global = true, default_value_t = DEFAULT_THRESHOLD)]
-    threshold: f32,
+    /// Minimum score for a match to be acted on. Defaults to the active
+    /// backend's own floor, since lexical and semantic scores are not on a
+    /// comparable scale.
+    #[arg(long, global = true, value_name = "SCORE")]
+    threshold: Option<f32>,
 
     /// Directory holding downloaded models.
     #[arg(long, global = true, value_name = "DIR")]
@@ -221,6 +223,11 @@ fn models_root(cli: &Cli) -> PathBuf {
     cli.models.clone().unwrap_or_else(models::default_root)
 }
 
+/// The score floor to apply: an explicit `--threshold`, else the backend's own.
+fn threshold(cli: &Cli, matcher: &dyn Matcher) -> f32 {
+    cli.threshold.unwrap_or_else(|| matcher.default_threshold())
+}
+
 fn init_tracing(verbose: u8) {
     let default = match verbose {
         0 => "warn",
@@ -268,12 +275,11 @@ fn build_matcher(set: &CommandSet, lang: &str) -> Box<dyn Matcher> {
 fn cmd_say(cli: &Cli, phrase: &str, dry_run: bool) -> Result<()> {
     let (set, matcher) = load(cli)?;
 
-    let Some(top) = matcher.best(phrase, cli.threshold) else {
+    let threshold = threshold(cli, matcher.as_ref());
+
+    let Some(top) = matcher.best(phrase, threshold) else {
         let near = matcher.rank(phrase, 3);
-        eprintln!(
-            "no command matched {phrase:?} at threshold {:.2}",
-            cli.threshold
-        );
+        eprintln!("no command matched {phrase:?} at threshold {threshold:.2}");
         if !near.is_empty() {
             eprintln!("\nclosest candidates:");
             for m in &near {
@@ -327,10 +333,11 @@ fn cmd_say(cli: &Cli, phrase: &str, dry_run: bool) -> Result<()> {
 fn cmd_why(cli: &Cli, phrase: &str, top: usize) -> Result<()> {
     let (_set, matcher) = load(cli)?;
     let ranked = matcher.rank(phrase, top.max(1));
+    let threshold = threshold(cli, matcher.as_ref());
 
     println!("phrase:    {phrase:?}");
     println!("backend:   {}", matcher.backend());
-    println!("threshold: {:.2}\n", cli.threshold);
+    println!("threshold: {threshold:.2}\n");
 
     if ranked.is_empty() {
         println!("no candidates scored above zero");
@@ -339,7 +346,7 @@ fn cmd_why(cli: &Cli, phrase: &str, top: usize) -> Result<()> {
 
     let width = ranked.iter().map(|m| m.id.len()).max().unwrap_or(0);
     for (i, m) in ranked.iter().enumerate() {
-        let marker = if i == 0 && m.score >= cli.threshold {
+        let marker = if i == 0 && m.score >= threshold {
             "->"
         } else {
             "  "
@@ -373,6 +380,7 @@ fn cmd_run(
     dry_run: bool,
 ) -> Result<()> {
     let (set, matcher) = load(cli)?;
+    let threshold = threshold(cli, matcher.as_ref());
 
     let input = match from {
         Some(path) => listen::Input::Wav(path),
@@ -388,7 +396,7 @@ fn cmd_run(
             model,
             dry_run,
             config: voxide_pipeline::Config {
-                threshold: cli.threshold,
+                threshold,
                 ..Default::default()
             },
         },
@@ -420,13 +428,15 @@ fn cmd_eval(
     );
 
     // The baseline is always available, so `--compare` can always report a
-    // delta rather than an unanchored number.
+    // delta rather than an unanchored number. Each backend is scored at its own
+    // floor: holding one number across both would not be a fairer comparison,
+    // it would just measure the wrong backend's calibration.
     let baseline = LexicalMatcher::new(&set, &cli.lang);
-    let baseline_report = eval::run(&baseline, &cases, cli.threshold);
+    let baseline_report = eval::run(&baseline, &cases, threshold(cli, &baseline));
 
     let primary: Box<dyn Matcher> = build_matcher(&set, &cli.lang);
     let primary_is_baseline = primary.backend() == baseline.backend();
-    let report = eval::run(primary.as_ref(), &cases, cli.threshold);
+    let report = eval::run(primary.as_ref(), &cases, threshold(cli, primary.as_ref()));
 
     if compare && !primary_is_baseline {
         eval::print_report(&baseline_report, false);

@@ -96,9 +96,31 @@ impl SemanticMatcher {
     }
 }
 
+/// Score below which a semantic match is treated as "no match".
+///
+/// Measured, not guessed. On the golden corpus, off-domain speech ("play some
+/// jazz music", "how tall is the eiffel tower") peaks at 0.297 against the
+/// bundled packs, while the weakest true paraphrase scores 0.359. This sits in
+/// that gap. `voxide eval --sweep` re-derives it for a different pack set.
+pub const SEMANTIC_THRESHOLD: f32 = 0.35;
+
+// Guards the regression this constant exists to prevent: reusing the lexical
+// floor here rejected 6 of 40 correct matches and put the semantic backend 10
+// points *below* the baseline it is meant to beat. The window is measured, so
+// re-derive it with `voxide eval --sweep` before moving either bound.
+const _: () = {
+    assert!(SEMANTIC_THRESHOLD > 0.297, "admits off-domain speech");
+    assert!(SEMANTIC_THRESHOLD < 0.359, "rejects known-good paraphrases");
+    assert!(SEMANTIC_THRESHOLD < crate::DEFAULT_THRESHOLD);
+};
+
 impl Matcher for SemanticMatcher {
     fn backend(&self) -> &'static str {
         "semantic"
+    }
+
+    fn default_threshold(&self) -> f32 {
+        SEMANTIC_THRESHOLD
     }
 
     fn rank(&self, text: &str, limit: usize) -> Vec<Match> {

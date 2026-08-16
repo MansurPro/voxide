@@ -23,6 +23,17 @@ pub trait Matcher: Send + Sync {
     /// Human-readable backend name, used in eval reports.
     fn backend(&self) -> &'static str;
 
+    /// Score below which this backend's matches are treated as "no match".
+    ///
+    /// Per-backend because the scales are not comparable: lexical overlap is
+    /// near-binary (a correct match scores ~0.99), while cosine similarity is
+    /// continuous and a genuine paraphrase lands in the middle of the range.
+    /// One shared number silently rejects most of what the semantic backend
+    /// gets right, so each implementation carries its own.
+    fn default_threshold(&self) -> f32 {
+        crate::DEFAULT_THRESHOLD
+    }
+
     /// Best candidate at or above `threshold`.
     fn best(&self, text: &str, threshold: f32) -> Option<Match> {
         self.rank(text, 1)

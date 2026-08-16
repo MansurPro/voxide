@@ -46,6 +46,10 @@ pub enum PipelineEvent {
 #[derive(Debug, Clone)]
 pub struct Config {
     /// Minimum match score to act on.
+    ///
+    /// Set this from the matcher you are pairing the pipeline with
+    /// (`Matcher::default_threshold`). The [`Default`] here is the lexical
+    /// floor, which silently rejects most correct semantic matches.
     pub threshold: f32,
     /// Silence after speech before the recogniser is flushed.
     pub silence_timeout_secs: f32,

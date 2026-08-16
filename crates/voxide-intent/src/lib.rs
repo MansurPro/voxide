@@ -27,8 +27,11 @@ pub use slots::extract as extract_slots;
 #[cfg(feature = "embed")]
 pub use semantic::SemanticMatcher;
 
-/// Default score below which a match is treated as "no match".
+/// Default score below which a lexical match is treated as "no match".
 ///
-/// Tuned per backend by `voxide eval --sweep`; this is only the starting point
-/// for a fresh install.
+/// Lexical overlap is near-binary: on the golden corpus a correct match scores
+/// ~0.99, so anything in the middle of the range is noise.
+///
+/// This is *not* a usable floor for the semantic backend, whose scores live on
+/// an entirely different scale -- see [`Matcher::default_threshold`].
 pub const DEFAULT_THRESHOLD: f32 = 0.62;

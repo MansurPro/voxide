@@ -5,5 +5,8 @@
 /models/
 *.onnx
 
+# fastembed drops its ONNX download here on the first `--features embed` run.
+/.fastembed_cache/
+
 # Local per-user state written by the CLI during development.
 /.voxide/
