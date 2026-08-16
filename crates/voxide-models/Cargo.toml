@@ -1,0 +1,19 @@
+[package]
+name = "voxide-models"
+description = "Pinned, checksum-verified model downloads for voxide."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+tracing.workspace = true
+sha2.workspace = true
+zip = { version = "6", default-features = false, features = ["deflate"] }
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+
+[dev-dependencies]
+tempfile.workspace = true

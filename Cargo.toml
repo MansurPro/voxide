@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/voxide-core",
     "crates/voxide-intent",
+    "crates/voxide-models",
     "crates/voxide-actions",
     "crates/voxide-audio",
     "crates/voxide-asr",
@@ -60,6 +61,7 @@ insta = "1.43"
 # --- internal ----------------------------------------------------------
 voxide-core = { path = "crates/voxide-core", version = "0.1.0" }
 voxide-intent = { path = "crates/voxide-intent", version = "0.1.0" }
+voxide-models = { path = "crates/voxide-models", version = "0.1.0" }
 voxide-actions = { path = "crates/voxide-actions", version = "0.1.0" }
 voxide-audio = { path = "crates/voxide-audio", version = "0.1.0" }
 voxide-asr = { path = "crates/voxide-asr", version = "0.1.0" }

@@ -56,7 +56,12 @@ $ voxide eval --compare --sweep
 
 No network calls, no telemetry, no account. Speech recognition, embeddings, and
 matching all run on your machine. The only thing voxide ever downloads is the
-model itself, once, via `voxide models pull`.
+model itself, once, via `voxide models pull` — pinned to an exact upstream
+artifact and verified against a recorded SHA-256, so a corrupted or swapped
+download is a named error rather than a model that quietly misbehaves.
+
+That downloader is part of the binary. No Python, no `pip install`, no
+virtualenv in the setup path.
 
 ---
 
@@ -73,7 +78,8 @@ Early, and honest about it. What works today:
 | ✅ | Wake word detection, pipeline state machine, `voxide run` |
 | ✅ | Cross-platform CI, `cargo-deny` license gating, 145 tests |
 | 🚧 | Semantic matcher and microphone backend — implemented, CI-verified (see *Development*) |
-| 📋 | `voxide models pull`, Lua actions, keystroke injection, dictation mode |
+| ✅ | `voxide models pull` — pinned, checksummed, atomic, zip-slip safe |
+| 📋 | Lua actions, keystroke injection, dictation mode |
 | 📋 | Acoustic wake word, so the recogniser can idle until spoken to |
 
 Text mode is not scaffolding that goes away: it is how the eval harness runs,
@@ -101,6 +107,8 @@ $ voxide why "..."                     # ranked candidates and why they scored
 $ voxide eval --compare --sweep        # score the matcher against the corpus
 $ voxide run --wake voxide             # listen on the microphone
 $ voxide run --from recording.wav      # replay a recording through the pipeline
+$ voxide models list                   # what models are available / installed
+$ voxide models pull vosk-en-small     # fetch one, verified against a pinned hash
 ```
 
 `voxide run` needs a build with `--features mic,vosk` and a speech model. Without
@@ -183,6 +191,7 @@ that are **off by default**, so `cargo test` works anywhere.
 | `voxide-asr` | `Transcriber` trait, Vosk backend, scriptable mock |
 | `voxide-wake` | `WakeDetector` trait, always-on and transcript spotting |
 | `voxide-intent` | `Matcher` trait, lexical baseline, semantic backend, slot extraction |
+| `voxide-models` | Pinned, checksum-verified model downloads and zip extraction |
 | `voxide-actions` | `Executor` trait, shell backend with real deadlines |
 | `voxide-pipeline` | The listening state machine. Emits events, performs no I/O |
 | `voxide` | CLI |

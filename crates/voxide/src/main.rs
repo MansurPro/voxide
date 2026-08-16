@@ -2,6 +2,7 @@
 
 mod eval;
 mod listen;
+mod models;
 mod packs;
 
 use anyhow::{Result, bail};
@@ -30,6 +31,10 @@ struct Cli {
     /// Minimum score for a match to be acted on.
     #[arg(long, global = true, default_value_t = DEFAULT_THRESHOLD)]
     threshold: f32,
+
+    /// Directory holding downloaded models.
+    #[arg(long, global = true, value_name = "DIR")]
+    models: Option<PathBuf>,
 
     /// Increase log verbosity. Repeat for more detail.
     #[arg(short, long, global = true, action = clap::ArgAction::Count)]
@@ -91,6 +96,12 @@ enum Cmd {
         dry_run: bool,
     },
 
+    /// Download and inspect speech and embedding models.
+    Models {
+        #[command(subcommand)]
+        action: ModelsCmd,
+    },
+
     /// Score the matcher against a golden phrase corpus.
     Eval {
         /// Directory of corpus `*.toml` files.
@@ -113,6 +124,21 @@ enum Cmd {
         /// Hide the per-case failure listing.
         #[arg(long)]
         quiet: bool,
+    },
+}
+
+#[derive(Subcommand)]
+enum ModelsCmd {
+    /// Show every model voxide can fetch, and whether it is installed.
+    List,
+    /// Download a model, verifying it against a pinned checksum.
+    Pull {
+        /// Model id. Omit to fetch everything in the catalog.
+        id: Option<String>,
+
+        /// Re-download even if the model is already installed.
+        #[arg(long)]
+        force: bool,
     },
 }
 
@@ -152,6 +178,12 @@ fn main() -> std::process::ExitCode {
             model.as_deref(),
             *dry_run,
         ),
+        Cmd::Models { action } => match action {
+            ModelsCmd::List => models::list(&models_root(&cli)),
+            ModelsCmd::Pull { id, force } => {
+                models::pull(&models_root(&cli), id.as_deref(), *force)
+            }
+        },
         Cmd::Eval {
             corpus,
             compare,
@@ -184,6 +216,10 @@ impl std::fmt::Display for NoMatch {
 }
 
 impl std::error::Error for NoMatch {}
+
+fn models_root(cli: &Cli) -> PathBuf {
+    cli.models.clone().unwrap_or_else(models::default_root)
+}
 
 fn init_tracing(verbose: u8) {
     let default = match verbose {

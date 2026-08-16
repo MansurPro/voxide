@@ -25,6 +25,7 @@ vosk = ["voxide-asr/vosk"]
 [dependencies]
 voxide-core.workspace = true
 voxide-intent.workspace = true
+voxide-models.workspace = true
 voxide-actions.workspace = true
 voxide-audio.workspace = true
 voxide-asr.workspace = true
